@@ -52,7 +52,7 @@ export default function RootLayout({ children }) {
             </label>
           </div>
         </div> */}
-        <Drawer children={children} />
+        <Drawer>{children}</Drawer>
       </body>
     </html>
   );
