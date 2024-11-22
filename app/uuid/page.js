@@ -12,8 +12,8 @@ export default function UUID() {
   }, [copied]);
 
   return (
-    <div className="h-screen w-[85vw] flex flex-col justify-center items-center">
-      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[30vw]">
+    <div className="h-screen w-full lg:w-[85vw] flex flex-col justify-center items-center">
+      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[90vw] lg:w-[30vw]">
         <div className="text-center mb-4">
           <div className="text-3xl mb-4">Generate UUID</div>
           <div>Create unique ids</div>

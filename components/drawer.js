@@ -8,14 +8,15 @@ const submenus = [
   { name: "JSON Formatter", href: "/json" },
   { name: "Markdown Editor", href: "/markdown" },
   { name: "QR Code Generator", href: "/qrcode" },
+  { name: "Analog Clock", href: "/analogClock" },
 ];
 export default function Drawer({ children }) {
   const pathname = usePathname();
   const [currentMenu, setCurrentMenu] = useState(pathname);
 
   return (
-    <div className="h-screen flex">
-      <div className="menu bg-base-300 text-base-content min-h-full w-60 p-4">
+    <div className="h-screen flex flex-col lg:flex-row">
+      <div className="menu bg-base-300 text-base-content lg:min-h-full min-w-60 p-4">
         {submenus.map((submenu) => (
           <Link
             key={submenu.name}
