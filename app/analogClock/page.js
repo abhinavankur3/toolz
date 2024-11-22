@@ -39,11 +39,10 @@ export default function AnalogClock() {
             aria-label="Hours"
             value={hours}
             onChange={(e) => {
-              if (e.target.validity.valid) {
+              if (Number(e.target.value) <= 12) {
                 setHours(Number(e.target.value));
               }
             }}
-            pattern="^(1[0-2]|[1-9])$"
             className="input input-bordered w-full mb-4 mr-2"
           />
         </label>
@@ -55,6 +54,8 @@ export default function AnalogClock() {
             type="text"
             value={minutes}
             onChange={(e) => {
+              console.log(e.target.validity.valid, e.target.value);
+
               if (e.target.validity.valid) {
                 setMinutes(Number(e.target.value));
               }
