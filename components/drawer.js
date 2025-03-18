@@ -5,6 +5,7 @@ import { useState } from "react";
 
 const submenus = [
   { name: "UUID Generator", href: "/uuid" },
+  { name: "Password Generator", href: "/password-generator" },
   { name: "JSON Formatter", href: "/json" },
   { name: "Markdown Editor", href: "/markdown" },
   { name: "QR Code Generator", href: "/qrcode" },
