@@ -1,115 +1,113 @@
 "use client";
-import { useState } from "react";
-import QRCode from "react-qr-code";
-import { ChromePicker } from "react-color";
+import { useEffect, useRef, useState } from "react";
+import qrcode from "qrcode-generator";
+import { Icons } from "@/components/icons";
+import { ToolHeader } from "@/components/tool-header";
+import { useShell } from "@/components/shell-context";
 
-export default function QRCodeGenerator() {
-  const [data, setData] = useState("");
-  const [size, setSize] = useState(128);
-  const [errorMargin, setErrorMargin] = useState("L");
-  const [bgColor, setBgColor] = useState("#ffffff");
-  const [fgColor, setFgColor] = useState("#000000");
-  const [qrCode, setQrCode] = useState("");
+export default function QrPage() {
+  const { toast } = useShell();
+  const [text, setText] = useState("https://toolz.local");
+  const [size, setSize] = useState(280);
+  const [ec, setEc] = useState("M");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    try {
+      const qr = qrcode(0, ec);
+      qr.addData(text || " ");
+      qr.make();
+      const cells = qr.getModuleCount();
+      const cs = Math.floor(size / (cells + 4));
+      const px = cs * (cells + 4);
+      const c = document.createElement("canvas");
+      c.width = c.height = px;
+      const ctx = c.getContext("2d");
+      const bg = getComputedStyle(document.body).getPropertyValue("--bg-card").trim();
+      const fg = getComputedStyle(document.body).getPropertyValue("--ink").trim();
+      ctx.fillStyle = bg || "#fff";
+      ctx.fillRect(0, 0, px, px);
+      ctx.fillStyle = fg || "#000";
+      for (let r = 0; r < cells; r++) {
+        for (let c2 = 0; c2 < cells; c2++) {
+          if (qr.isDark(r, c2)) ctx.fillRect((c2 + 2) * cs, (r + 2) * cs, cs, cs);
+        }
+      }
+      ref.current.appendChild(c);
+    } catch (e) {
+      ref.current.innerHTML =
+        '<div style="color:var(--ink-3);padding:40px;text-align:center">Too much data to encode</div>';
+    }
+  }, [text, size, ec]);
+
+  const download = () => {
+    const canvas = ref.current?.querySelector("canvas");
+    if (!canvas) return;
+    const a = document.createElement("a");
+    a.download = "qr.png";
+    a.href = canvas.toDataURL();
+    a.click();
+    toast("QR downloaded");
+  };
 
   return (
-    <div className="min-h-screen w-[85vw] flex flex-col justify-center items-center">
-      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[40vw]">
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-4">Generate QR code</div>
-        </div>
-        <div className="mb-4 flex flex-col">
-          <div className="mb-2">Text or URL</div>
-          <div className="flex ">
-            <input
-              type="text"
-              value={data}
-              className="input input-bordered w-full mb-4 mr-2"
-              onChange={(e) => setData(e.target.value)}
-            />
-          </div>
-          <div>
-            <div className="flex justify-between mb-4">
-              <div className="flex items-center ">
-                <div className="mr-4">Size</div>
-                <select
-                  className="select select-bordered w-full"
-                  onChange={(e) => {
-                    setSize(e.target.value);
-                  }}
-                  defaultValue={128}
-                >
-                  <option value={128}>128 x 128</option>
-                  <option value={256}>256 x 256</option>
-                  <option value={512}>512 x 512</option>
-                </select>
-              </div>
-              <div className="flex items-center ">
-                <div className="mr-4">Error Correction Level</div>
-                <select
-                  className="select select-bordered w-full"
-                  onChange={(e) => {
-                    setErrorMargin(e.target.value);
-                  }}
-                  defaultValue={"L"}
-                >
-                  <option value={"L"}>Low (L)</option>
-                  <option value={"M"}>Medium (M)</option>
-                  <option value={"Q"}>Quartile (Q)</option>
-                  <option value={"H"}>High (H)</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-between mb-4">
-              <div>
-                <div className="mb-2">Background Color</div>
-                <ChromePicker
-                  color={bgColor}
-                  onChange={(color) => setBgColor(color.hex)}
-                />
-              </div>
-              <div>
-                <div className="mb-2">Foreground Color</div>
-                <ChromePicker
-                  color={fgColor}
-                  onChange={(color) => setFgColor(color.hex)}
-                />
-              </div>
-            </div>
-          </div>
-          <button
-            className="btn mb-4 bg-black text-white hover:text-black hover:bg-base-300"
-            onClick={() => setQrCode(data)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+    <>
+      <ToolHeader title="QR Code Generator" desc="Encode any text or URL into a scannable QR code." />
+      <div className="tool-2col">
+        <div className="card">
+          <div className="card-h"><h3>Content</h3></div>
+          <div className="card-b col gap-4">
+            <div className="field">
+              <label>Text or URL</label>
+              <textarea
+                className="textarea"
+                style={{ minHeight: 140 }}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
               />
-            </svg>
-            Generate
-          </button>
-        </div>
-
-        {qrCode && (
-          <div className="flex justify-center items-center p-12 max-w-full">
-            <QRCode
-              size={size}
-              value={qrCode}
-              level={errorMargin}
-              bgColor={bgColor}
-              fgColor={fgColor}
-            />
+            </div>
+            <div className="row gap-3" style={{ flexWrap: "wrap" }}>
+              <div className="field" style={{ flex: 1, minWidth: 140 }}>
+                <label>Error correction</label>
+                <select className="select" value={ec} onChange={(e) => setEc(e.target.value)}>
+                  <option value="L">Low (7%)</option>
+                  <option value="M">Medium (15%)</option>
+                  <option value="Q">Quartile (25%)</option>
+                  <option value="H">High (30%)</option>
+                </select>
+              </div>
+              <div className="field" style={{ flex: 1, minWidth: 140 }}>
+                <label>Size <span className="muted mono" style={{ float: "right" }}>{size}px</span></label>
+                <input
+                  type="range"
+                  className="range"
+                  min="120"
+                  max="420"
+                  step="20"
+                  value={size}
+                  onChange={(e) => setSize(+e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+        <div className="card">
+          <div className="card-h">
+            <h3>Preview</h3>
+            <button className="btn" type="button" onClick={download}>
+              <Icons.download size={14} />PNG
+            </button>
+          </div>
+          <div
+            className="card-b"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}
+          >
+            <div ref={ref} />
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

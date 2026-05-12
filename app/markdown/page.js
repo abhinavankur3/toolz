@@ -1,111 +1,76 @@
 "use client";
-import { useState, useEffect } from "react";
-import MarkdownPreview from "@uiw/react-markdown-preview";
+import { useMemo, useState } from "react";
+import { ToolHeader } from "@/components/tool-header";
+import { CopyButton } from "@/components/copy-button";
 
-export default function Markdown() {
-  const [markdown, setMarkdown] = useState(`# Welcome to the Markdown Editor
+function esc(s) {
+  return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
 
-This is a live preview of your Markdown.
+function mdToHtml(md) {
+  let h = md;
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, l, c) => `<pre><code>${esc(c)}</code></pre>`);
+  h = h.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  h = h.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  h = h.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  h = h.replace(/`([^`]+)`/g, "<code>$1</code>");
+  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h = h.replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>");
+  h = h.replace(/^- (.+)$/gm, "<li>$1</li>");
+  h = h.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, (m) => "<ul>" + m + "</ul>");
+  h = h.replace(/^---$/gm, "<hr>");
+  h = h
+    .split(/\n{2,}/)
+    .map((p) => {
+      if (p.match(/^<(h\d|ul|pre|blockquote|hr)/)) return p;
+      return p.trim() ? "<p>" + p.replace(/\n/g, "<br>") + "</p>" : "";
+    })
+    .join("\n");
+  return h;
+}
+
+export default function MarkdownPage() {
+  const [md, setMd] = useState(`# Welcome to toolz.
+
+A small workshop of **fast**, *focused* IT utilities that run entirely in your browser.
 
 ## Features
+- No tracking, no servers
+- Keyboard-first
+- Theme + density tweakable
 
-- **Bold** and *italic* text
-- [Links](https://toolz.abhinavankur.com)
-- Lists:
-  1. Ordered
-  2. Unordered
+> Quick, clean, and a little opinionated.
 
-\`\`\`javascript showLineNumbers
-const data = []
-data.push('Hello World!')
-\`\`\`
+Try editing this \`markdown\` and the preview updates live.
 
-> Blockquotes
+---
 
-Enjoy writing!`);
-  const [copied, setCopied] = useState(false);
+[Open the repo →](#)`);
 
-  useEffect(() => {
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  }, [copied]);
+  const html = useMemo(() => mdToHtml(md), [md]);
 
   return (
-    <div className="h-screen w-[85vw] flex justify-around items-center">
-      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[40vw] min-h-[90vh]">
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-4">Markdown Editor</div>
-        </div>
-        <div className="mb-4 flex flex-col">
-          <div className="mb-2">Input Markdown:</div>
-          <div className="flex ">
-            <textarea
-              className="textarea textarea-bordered w-full mb-4"
-              rows={20}
-              onChange={(e) => setMarkdown(e.target.value)}
-              value={markdown}
-            ></textarea>
+    <>
+      <ToolHeader title="Markdown Editor" desc="Write Markdown, see the rendered result in real time." />
+      <div className="tool-2col">
+        <div className="card">
+          <div className="card-h"><h3>Source</h3><span className="badge mono">{md.length} ch</span></div>
+          <div className="card-b">
+            <textarea className="textarea mono" style={{ minHeight: 440, fontSize: 13 }} value={md} onChange={(e) => setMd(e.target.value)} spellCheck={false} />
           </div>
         </div>
-        <div>
-          <button
-            className="btn w-full bg-black text-white hover:text-black hover:bg-base-300"
-            onClick={() => {
-              if (!copied) {
-                navigator.clipboard.writeText(markdown);
-                setCopied(true);
-              }
-            }}
-          >
-            {copied ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m4.5 12.75 6 6 9-13.5"
-                />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-                />
-              </svg>
-            )}
-          </button>
+        <div className="card">
+          <div className="card-h">
+            <h3>Preview</h3>
+            <CopyButton small value={html} label="Copy HTML" toastMsg="HTML copied" />
+          </div>
+          <div className="card-b">
+            <div className="md-prev" style={{ minHeight: 440 }} dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
         </div>
       </div>
-      <div
-        className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[40vw] min-h-[90vh]"
-        data-color-mode="light"
-      >
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-4">Markdown Viewer</div>
-        </div>
-        <MarkdownPreview
-          source={markdown}
-          style={{ padding: 16 }}
-          className="bg-white"
-        />
-        <div></div>
-      </div>
-    </div>
+    </>
   );
 }

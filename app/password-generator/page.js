@@ -1,191 +1,86 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Icons } from "@/components/icons";
+import { ToolHeader } from "@/components/tool-header";
+import { CopyButton } from "@/components/copy-button";
 
-const generatePassword = ({
-  isAlphabets,
-  isNumbers,
-  isSpecialCharacters,
-  length,
-}) => {
-  const alphabets = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const numbers = "0123456789";
-  const specialCharacters = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-  let charset = "";
+export default function PasswordPage() {
+  const [len, setLen] = useState(20);
+  const [lower, setLower] = useState(true);
+  const [upper, setUpper] = useState(true);
+  const [nums, setNums] = useState(true);
+  const [syms, setSyms] = useState(true);
+  const [pw, setPw] = useState("");
 
-  if (isAlphabets) {
-    charset += alphabets;
-  }
-  if (isNumbers) {
-    charset += numbers;
-  }
-  if (isSpecialCharacters) {
-    charset += specialCharacters;
-  }
+  const gen = useCallback(() => {
+    const pools = [];
+    if (lower) pools.push("abcdefghijkmnpqrstuvwxyz");
+    if (upper) pools.push("ABCDEFGHJKLMNPQRSTUVWXYZ");
+    if (nums) pools.push("23456789");
+    if (syms) pools.push("!@#$%^&*-_=+?");
+    if (!pools.length) { setPw(""); return; }
+    const all = pools.join("");
+    const arr = new Uint32Array(len);
+    crypto.getRandomValues(arr);
+    let out = "";
+    pools.forEach((p, i) => { out += p[arr[i] % p.length]; });
+    for (let i = pools.length; i < len; i++) out += all[arr[i] % all.length];
+    out = out.split("").sort(() => Math.random() - 0.5).join("");
+    setPw(out);
+  }, [len, lower, upper, nums, syms]);
 
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset.charAt(randomIndex);
-  }
-  return password;
-};
+  useEffect(() => { gen(); }, [gen]);
 
-export default function UUID() {
-  const [password, setPassword] = useState(
-    generatePassword({
-      isAlphabets: true,
-      isNumbers: true,
-      isSpecialCharacters: true,
-      length: 16,
-    })
-  );
-  const [isAlphabets, setIsAlphabets] = useState(true);
-  const [isNumbers, setIsNumbers] = useState(true);
-  const [isSpecialCharacters, setIsSpecialCharacters] = useState(true);
-  const [length, setLength] = useState(16);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  }, [copied]);
-
-  useEffect(() => {
-    setPassword(
-      generatePassword({ isAlphabets, isNumbers, isSpecialCharacters, length })
-    );
-  }, [isAlphabets, isNumbers, isSpecialCharacters, length]);
+  const score = useMemo(() => {
+    const variety = (lower ? 26 : 0) + (upper ? 26 : 0) + (nums ? 10 : 0) + (syms ? 13 : 0);
+    if (!variety || !pw) return { lbl: "none", pct: 0, c: "var(--ink-4)" };
+    const bits = Math.log2(variety) * len;
+    if (bits < 40) return { lbl: "weak", pct: 25, c: "oklch(60% 0.18 30)" };
+    if (bits < 70) return { lbl: "ok", pct: 50, c: "oklch(70% 0.16 80)" };
+    if (bits < 110) return { lbl: "strong", pct: 80, c: "oklch(65% 0.16 145)" };
+    return { lbl: "very strong", pct: 100, c: "oklch(60% 0.18 145)" };
+  }, [len, lower, upper, nums, syms, pw]);
 
   return (
-    <div className="h-screen w-full lg:w-[85vw] flex flex-col justify-center items-center">
-      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[90vw] lg:w-[45vw]">
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-4">Generate Password</div>
-          <div>Create unique Passwords</div>
-        </div>
-        <div className="mb-4 flex justify-between align-middle">
-          <div className="flex align-baseline">
-            No. of characters
-            <input
-              type="number"
-              defaultValue={16}
-              onChange={(e) => setLength(e.target.value)}
-              className="input input-bordered w-16 h-8 ml-2"
-            ></input>
-          </div>
-          <div className="flex align-middle">
-            Alphabets
-            <input
-              type="checkbox"
-              defaultChecked
-              onChange={(e) => setIsAlphabets(e.target.checked)}
-              className="checkbox checkbox-neutral ml-2"
-            />
-          </div>
-          <div className="flex align-middle">
-            Numbers
-            <input
-              type="checkbox"
-              defaultChecked
-              onChange={(e) => setIsNumbers(e.target.checked)}
-              className="checkbox checkbox-neutral ml-2"
-            />
-          </div>
-          <div className="flex align-middle">
-            Special characters
-            <input
-              type="checkbox"
-              defaultChecked
-              onChange={(e) => setIsSpecialCharacters(e.target.checked)}
-              className="checkbox checkbox-neutral ml-2"
-            />
-          </div>
-        </div>
-        <div className="mb-4 flex flex-col">
-          <div className="mb-4">Generated Password</div>
-          <div className="flex ">
-            <input
-              type="text"
-              value={password}
-              className="input input-bordered w-full mb-4 mr-2"
-              readOnly
-            />
-            <button
-              className="btn"
-              onClick={() => {
-                if (!copied) {
-                  navigator.clipboard.writeText(password);
-                  setCopied(true);
-                }
-              }}
-            >
-              {copied ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m4.5 12.75 6 6 9-13.5"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          <button
-            className="btn bg-black text-white hover:text-black hover:bg-base-300"
-            onClick={() =>
-              setPassword(
-                generatePassword({
-                  isAlphabets,
-                  isNumbers,
-                  isSpecialCharacters,
-                  length,
-                })
-              )
-            }
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-              />
-            </svg>
-            Regenerate Password
+    <>
+      <ToolHeader
+        title="Password Generator"
+        desc="Cryptographically strong passwords, generated locally in your browser."
+        actions={
+          <button className="btn primary" type="button" onClick={gen}>
+            <Icons.refresh size={14} />Regenerate
           </button>
+        }
+      />
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-b col gap-4">
+          <div className="mono-out" style={{ fontSize: 18, padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ flex: 1, wordBreak: "break-all" }}>{pw || "·"}</span>
+            <CopyButton small value={pw} toastMsg="Password copied" />
+          </div>
+          <div className="row gap-3">
+            <div style={{ flex: 1, height: 4, background: "var(--bg-active)", borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ width: score.pct + "%", height: "100%", background: score.c, transition: "width .2s, background .2s" }} />
+            </div>
+            <span className="mono" style={{ fontSize: 11, color: score.c, minWidth: 90, textAlign: "right", textTransform: "uppercase", letterSpacing: ".06em" }}>{score.lbl}</span>
+          </div>
         </div>
-        <div></div>
       </div>
-    </div>
+      <div className="card">
+        <div className="card-h"><h3>Options</h3></div>
+        <div className="card-b col gap-4">
+          <div className="field">
+            <label>Length <span className="muted mono" style={{ float: "right" }}>{len}</span></label>
+            <input type="range" className="range" min="6" max="64" value={len} onChange={(e) => setLen(+e.target.value)} />
+          </div>
+          <div className="row gap-4" style={{ flexWrap: "wrap" }}>
+            <label className="check"><input type="checkbox" checked={lower} onChange={(e) => setLower(e.target.checked)} />Lowercase</label>
+            <label className="check"><input type="checkbox" checked={upper} onChange={(e) => setUpper(e.target.checked)} />Uppercase</label>
+            <label className="check"><input type="checkbox" checked={nums} onChange={(e) => setNums(e.target.checked)} />Numbers</label>
+            <label className="check"><input type="checkbox" checked={syms} onChange={(e) => setSyms(e.target.checked)} />Symbols</label>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

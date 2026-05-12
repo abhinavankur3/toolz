@@ -1,98 +1,90 @@
 "use client";
-import { useEffect, useState } from "react";
-import { v4 } from "uuid";
-export default function UUID() {
-  const [uuid, setUUID] = useState(v4());
-  const [copied, setCopied] = useState(false);
+import { useCallback, useEffect, useState } from "react";
+import { Icons } from "@/components/icons";
+import { ToolHeader } from "@/components/tool-header";
+import { CopyButton, CopyIconButton } from "@/components/copy-button";
+import { useShell } from "@/components/shell-context";
 
-  useEffect(() => {
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  }, [copied]);
+function fallbackUuid() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+export default function UuidPage() {
+  const { toast } = useShell();
+  const [count, setCount] = useState(5);
+  const [version, setVersion] = useState("v4");
+  const [uppercase, setUppercase] = useState(false);
+  const [hyphens, setHyphens] = useState(true);
+  const [ids, setIds] = useState([]);
+
+  const gen = useCallback(() => {
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      let s = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : fallbackUuid();
+      if (version === "nil") s = "00000000-0000-0000-0000-000000000000";
+      if (!hyphens) s = s.replace(/-/g, "");
+      if (uppercase) s = s.toUpperCase();
+      out.push(s);
+    }
+    setIds(out);
+  }, [count, version, uppercase, hyphens]);
+
+  useEffect(() => { gen(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen w-full lg:w-[85vw] flex flex-col justify-center items-center">
-      <div className=" border border-seconary-content rounded-lg p-6 flex flex-col w-[90vw] lg:w-[40vw]">
-        <div className="text-center mb-4">
-          <div className="text-3xl mb-4">Generate UUID</div>
-          <div>Create unique ids</div>
-        </div>
-        <div className="mb-4 flex flex-col">
-          <div className="mb-4">Generated UUID</div>
-          <div className="flex ">
-            <input
-              type="text"
-              value={uuid}
-              className="input input-bordered w-full mb-4 mr-2"
-              readOnly
-            />
-            <button
-              className="btn"
-              onClick={() => {
-                if (!copied) {
-                  navigator.clipboard.writeText(uuid);
-                  setCopied(true);
-                }
-              }}
-            >
-              {copied ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m4.5 12.75 6 6 9-13.5"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          <button
-            className="btn bg-black text-white hover:text-black hover:bg-base-300"
-            onClick={() => setUUID(v4())}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-              />
-            </svg>
-            Regenerate UUID
+    <>
+      <ToolHeader
+        title="UUID Generator"
+        desc="RFC 4122 universally unique identifiers, freshly minted."
+        actions={
+          <button className="btn primary" type="button" onClick={gen}>
+            <Icons.refresh size={14} />Generate
           </button>
+        }
+      />
+      <div className="tool-2col">
+        <div className="card">
+          <div className="card-h"><h3>Options</h3><span className="badge">{version}</span></div>
+          <div className="card-b col gap-4">
+            <div className="field">
+              <label>Count <span className="muted mono" style={{ float: "right" }}>{count}</span></label>
+              <input type="range" className="range" min="1" max="50" value={count} onChange={(e) => setCount(+e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Version</label>
+              <select className="select" value={version} onChange={(e) => setVersion(e.target.value)}>
+                <option value="v4">v4 (random)</option>
+                <option value="nil">nil (all zeros)</option>
+              </select>
+            </div>
+            <div className="col gap-2">
+              <label className="check"><input type="checkbox" checked={uppercase} onChange={(e) => setUppercase(e.target.checked)} />Uppercase</label>
+              <label className="check"><input type="checkbox" checked={hyphens} onChange={(e) => setHyphens(e.target.checked)} />Hyphens</label>
+            </div>
+          </div>
         </div>
-        <div></div>
+        <div className="card">
+          <div className="card-h">
+            <h3>Output</h3>
+            <CopyButton small value={ids.join("\n")} label={`Copy all (${ids.length})`} toastMsg={`Copied ${ids.length} UUIDs`} />
+          </div>
+          <div className="card-b">
+            <div className="mono-out tall" style={{ padding: "10px 14px" }}>
+              {ids.map((id, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}>
+                  <span style={{ color: "var(--ink-4)", fontSize: 11, minWidth: 24 }}>{(i + 1).toString().padStart(2, "0")}</span>
+                  <span style={{ flex: 1 }}>{id}</span>
+                  <CopyIconButton value={id} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
